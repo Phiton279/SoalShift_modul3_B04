@@ -41,7 +41,7 @@ int main(){
 	int* file1 = (int*)1;
 	int* file2 = (int*)2;
 
-    pthread_create(&tid[0], NULL, &makeDir1, (void*)&file1);
+	pthread_create(&tid[0], NULL, &makeDir1, (void*)&file1);
 	pthread_create(&tid[1], NULL, &makeDir2, (void*)&file2);
 	pthread_join(tid[0], NULL);
 	pthread_join(tid[1], NULL);
@@ -57,10 +57,10 @@ int main(){
 	pthread_join(tid[1], NULL);
 
 	printf("Menunggu 15 detik untuk mengekstrak kembali\n");
-    for (int i=1; i<=15; i++){
-        printf("%d\n", i);
-        sleep(1);
-    }
+	for (int i=1; i<=15; i++){
+	printf("%d\n", i);
+	sleep(1);
+	}
 
 	pthread_create(&tid[0], NULL, &extract1, (void*)&file1);
 	pthread_create(&tid[1], NULL, &extract2, (void*)&file2);
