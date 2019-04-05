@@ -95,13 +95,213 @@ Syarat Menggunakan Lebih dari 1 Thread
 ```
 ### Pemahaman Soal 3
 
+Disoal No 3 Kita diminta Untuk Membuat sebuah program yang menampilkan kegiatan 2 orang iraj dan agmal. Dimana Nantinya program
+dapat menampilkan status kemudian membuat pilihan yang mengganti status. Diakhir ketika salah satu status telah terpenuhi maka program
+akan berakhir dan menampilkan keadaan akhir yakni agmal terbangun atau iraj tidur. disini menggunakan dua thread untuk membagi antara
+dua karakter agmal dan iraj
+
 #### Jawaban 3
 #### Source Code
-
 ```c
+#include<stdio.h>
+#include<string.h>
+#include<pthread.h>
+#include<stdlib.h>
+#include<unistd.h>
+
+int agmal_status    = 0;
+int iraj_status     = 100;
+int agmal_flag      = 0;
+int iraj_flag       = 0;
+
+
+void * test(void *ptr){
+
+
+}
+
+void * agmal(void *ptr){
+    while (1){
+        if(agmal_flag==3){
+            printf("(Fitur Agmal Ayo Bangun disabled 10 s)\n");
+            sleep(10); 
+            agmal_flag=0;
+        }
+    }
+    //printf("Fitur Iraj Ayo Tidur disabled 10 s\n");
+    
+}
+
+void * iraj(void *ptr){
+    while(1){
+        if(iraj_flag ==3){
+            printf("(Fitur Iraj Ayo Tidur disabled 10 s)\n"); 
+            sleep(10);
+            iraj_flag=0;
+        }
+    }
+    
+    
+}
+
+int main(){
+
+    pthread_t thread1,thread2,thread3;
+    char str1[20];
+    char str2[] = "All Status";
+    char str3[] = "Agmal Ayo Bangun";
+    char str4[] = "Iraj Ayo Tidur";
+    
+    pthread_create(&(thread1), NULL, test, NULL);
+    pthread_create(&(thread2), NULL, agmal, NULL);
+    pthread_create(&(thread3), NULL, iraj, NULL);
+    
+    printf("Agmal Wake up Status = %d\n",agmal_status);
+    printf("Iraj Spirit Status = %d\n",iraj_status);
+    
+    printf("1. All Status = Menampilkan status\n");
+    printf("2. Agmal Ayo bangun = Menambah wake up status agmal \n");
+    printf("3. Iraj Ayo Tidur = Mengurangi spirit status iraj\n");;
+    while (1){
+        printf("%d %d\n",agmal_flag,iraj_flag);
+        printf("Masukan Pilihan = ");
+        scanf("%[^\n]s",str1); 
+        
+        printf("\n");
+
+        if(strcasecmp(str1,str2) == 0){
+            printf("Agmal Wake up Status = %d\n",agmal_status);
+            printf("Iraj Spirit Status = %d\n\n",iraj_status);
+        }
+        else if (strcasecmp(str1,str3) == 0){
+            
+            if (agmal_flag==3){
+                printf("Fitur Agmal Ayo Bangun Masih disabled\n");  
+            }
+            else{
+                agmal_status+=15;
+                agmal_flag +=1;
+            }
+            
+        }
+        else if (strcasecmp(str1,str4) == 0){
+            if (iraj_flag==3){
+                printf("Fitur Iraj Ayo Tidur Masih disabled\n");
+            }
+            else {
+                iraj_status -=20;
+                iraj_flag +=1;
+            }
+        }
+        else{
+            printf("command salah\n\n");
+        }
+
+        if (agmal_status >= 100){
+            printf("end\n");
+            printf("Agmal Terbangun,mereka bangun pagi dan berolahraga\n");
+            exit(0);
+            break;
+
+        }
+        else if (iraj_status <= 0){
+            printf("end\n");
+            printf("Iraj ikut tidur, dan bangun kesiangan bersama Agmal\n");
+            exit(0);
+            break;
+        }
+        getchar();
+    }
+    
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+    pthread_join(thread3, NULL);
+}
 ```
 
 ### Penjelasan
+```C
+    pthread_t thread1,thread2,thread3;
+    char str1[20];
+    char str2[] = "All Status";
+    char str3[] = "Agmal Ayo Bangun";
+    char str4[] = "Iraj Ayo Tidur";
+    
+    pthread_create(&(thread1), NULL, test, NULL);
+    pthread_create(&(thread2), NULL, agmal, NULL);
+    pthread_create(&(thread3), NULL, iraj, NULL);
+```
+Pertama-tama melakukan pembuatan thread dengan pthread_t kemudian melakukan create agar thread dapat berjalan. Dalam keadaan ini 
+semua thread akan berjalan secara bersamaan.
+
+```C
+while (1){
+        if(strcasecmp(str1,str2) == 0){
+        }
+        else if (strcasecmp(str1,str3) == 0){
+            
+        }
+        else if (strcasecmp(str1,str4) == 0){
+        }
+        else{
+        }
+```
+
+Dalam fungsi ini kita melaukan pemilihan fitur terhadap string yang dimasukan. pemilihan dilakukan dengan strcasecmp agar bsa melakukan
+compare terhadap dua string dan tidak berpengaruh terhadap huruf kecil maupun besar.
+
+```C
+    str1==str2
+    printf("Agmal Wake up Status = %d\n",agmal_status);
+    printf("Iraj Spirit Status = %d\n\n",iraj_status);
+
+    str1==str3
+    if (agmal_flag==3){
+        printf("Fitur Agmal Ayo Bangun Masih disabled\n");  
+    }
+    else{
+        agmal_status+=15;
+        agmal_flag +=1;
+    }
+
+    str1==str4
+    if (iraj_flag==3){
+        printf("Fitur Iraj Ayo Tidur Masih disabled\n");
+    }
+    else {
+        iraj_status -=20;
+        iraj_flag +=1;
+    }
+
+```
+
+dalam fungsi ini menampilkan ketika string masukan yang dicompare sesuai dengan inputan. bila sama dengan string kedua yakni all stat
+maka akan memunculkan info tentang status dari kedua orang. bila sama dengan string ketiga yakni agmal ayo bangun , maka stat agmal akan bertambah
+dan terakhir string 4 iraj ayo tidur. maka akan mengurangi status iraj. flag ditambahkan karena nantinya jika fitur agmal dan iraj telah 
+dipilih 3 kali maka fitur itu akan berhenti selama 10 detik.
+
+```C
+void * agmal(void *ptr){
+    while (1){
+        if(agmal_flag==3){
+            printf("(Fitur Agmal Ayo Bangun disabled 10 s)\n");
+            sleep(10); 
+            agmal_flag=0;
+        }
+    }
+    //printf("Fitur Iraj Ayo Tidur disabled 10 s\n");
+    
+}
+```
+Dalam thread agmal terdapat control untuk disable fitur agmal kemudian diberikan sleep() untuk melakukan tunggu sehingga thread tidak berjalan
+selama sepuluh detik kemudian stelah itu flag dijadikan 0 kembali agar dapat diakses kembali.begitu juga dalam thread iraj
+
+```C
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+    pthread_join(thread3, NULL);
+```
+Terakhir diberikan thread join untuk mengahkiri thread.
 
 ### **Nomor 4**
 
