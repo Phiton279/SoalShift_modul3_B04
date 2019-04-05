@@ -26,13 +26,133 @@ Contoh:
 ```
 
 #### Pemahaman Soal 1
+```
+Pemanfaatan thread untuk menghitung Faktorial secara paralel.
+```
 
 #### Jawaban
 
 #### Source code
 ```c
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<pthread.h>
+
+int store[100];
+
+void* fact(void* arg){
+    int *in = arg;
+    store[0] = 1;
+    store[1] = 1;
+    for(int i = 2; i <= *in; i++)
+    {
+        store[i] = i * store[i-1];
+    }
+}
+
+void sort(int in[], int ite) 
+{ 
+    for(int i = 0; i < ite; i++)
+    {
+        for(int j = i; j < ite; j++)
+        {
+            while(in[i] > in[j])
+            {
+                int temp = in[j];
+                in[j] = in[i];
+                in[i] = temp; 
+            }
+        }
+    }
+} 
+
+
+int main(int argc, char *argv[]){
+
+    int ite = argc-1;
+    pthread_t t_id[100];
+    int in[100];
+
+    for(int i = 0; i < ite; i++)
+    {
+        in[i] = atoi(argv[i+1]);
+    }
+
+    sort(in, ite);
+
+    for(int i = 0; i < ite; i++) pthread_create(&t_id[i], NULL, &fact, &in[i]);
+
+    for(int i = 0; i < ite; i++) pthread_join(t_id[i], NULL);
+
+    for(int i = 0; i < ite; i++) printf("%d! = %d\n", in[i], store[in[i]]);
+
+    return 0;
+    
+}
 ```
 #### Penjelasan
+```c
+int ite = argc-1;
+```
+Untuk menyimpan banyaknya argumen yang masuk namun dikurangi satu karena parameter awal merupakan nama file.
+```c
+for(int i = 0; i < ite; i++)
+{
+    in[i] = atoi(argv[i+1]);
+}
+```
+Untuk mengubah argument value manjadi integer.
+```c
+sort(in, ite);
+```
+Untuk memanggil fungsi yang akan mengurutkan array.
+```c
+void sort(int in[], int ite) 
+{ 
+    for(int i = 0; i < ite; i++)
+    {
+        for(int j = i; j < ite; j++)
+        {
+            while(in[i] > in[j])
+            {
+                int temp = in[j];
+                in[j] = in[i];
+                in[i] = temp; 
+            }
+        }
+    }
+} 
+```
+Untuk mengurutkan array dari terkecil ke terbesar menggunakan algoritma Bubble Sort.
+```c
+for(int i = 0; i < ite; i++) pthread_create(&t_id[i], NULL, &fact, &in[i]);
+```
+Untuk membuat thread.
+```c
+int store[100];
+```
+Untuk menyimpan hasil faktorial yang telah terurut.
+```c
+void* fact(void* arg){
+    int *in = arg;
+    store[0] = 1;
+    store[1] = 1;
+    for(int i = 2; i <= *in; i++)
+    {
+        store[i] = i * store[i-1];
+    }
+}
+```
+Untuk mengenerate bilangan faktorial memanfaatkan nilai awal store[0] dan store[1] yang kemudian diiterasi.
+```c
+for(int i = 0; i < ite; i++) pthread_join(t_id[i], NULL);
+```
+Agar thread berjalan secara bergantian (seperti wait()).
+```c
+for(int i = 0; i < ite; i++) printf("%d! = %d\n", in[i], store[in[i]]);
+```
+Untuk mencetak hasil yang telah terurut yang disimpan di variable store[].
 
 
 ### **Nomor 2**
@@ -41,30 +161,379 @@ Contoh:
 
 ```
 Pada suatu hari ada orang yang ingin berjualan 1 jenis barang secara private, dia memintamu membuat program C dengan spesifikasi sebagai berikut:
-Terdapat 2 server: server penjual dan server pembeli
-1 server hanya bisa terkoneksi dengan 1 client
-Server penjual dan server pembeli memiliki stok barang yang selalu sama
-Client yang terkoneksi ke server penjual hanya bisa menambah stok
-Cara menambah stok: client yang terkoneksi ke server penjual mengirim string “tambah” ke server lalu stok bertambah 1
-Client yang terkoneksi ke server pembeli hanya bisa mengurangi stok
-Cara mengurangi stok: client yang terkoneksi ke server pembeli mengirim string “beli” ke server lalu stok berkurang 1
-Server pembeli akan mengirimkan info ke client yang terhubung dengannya apakah transaksi berhasil atau tidak berdasarkan ketersediaan stok
-Jika stok habis maka client yang terkoneksi ke server pembeli akan mencetak “transaksi gagal”
-Jika stok masih ada maka client yang terkoneksi ke server pembeli akan mencetak “transaksi berhasil”
-Server penjual akan mencetak stok saat ini setiap 5 detik sekali
+    Terdapat 2 server: server penjual dan server pembeli
+    1 server hanya bisa terkoneksi dengan 1 client
+    Server penjual dan server pembeli memiliki stok barang yang selalu sama
+    Client yang terkoneksi ke server penjual hanya bisa menambah stok
+        Cara menambah stok: client yang terkoneksi ke server penjual mengirim string “tambah” ke server lalu stok bertambah 1
+    Client yang terkoneksi ke server pembeli hanya bisa mengurangi stok
+        Cara mengurangi stok: client yang terkoneksi ke server pembeli mengirim string “beli” ke server lalu stok berkurang 1
+    Server pembeli akan mengirimkan info ke client yang terhubung dengannya apakah transaksi berhasil atau tidak berdasarkan ketersediaan stok
+    Jika stok habis maka client yang terkoneksi ke server pembeli akan mencetak “transaksi gagal”
+    Jika stok masih ada maka client yang terkoneksi ke server pembeli akan mencetak “transaksi berhasil”
+    Server penjual akan mencetak stok saat ini setiap 5 detik sekali
+
 Menggunakan thread, socket, shared memory
 
 ```
 #### Pemahaman Soal 2
+```
+Pemanfaatan thread untuk perintah "Server penjual akan mencetak stok saat ini setiap 5 detik sekali"
+Pemanfaatan socket untuk komunikasi antara server dan client
+Pemanfaatan shared memory untuk perintah "Server penjual dan server pembeli memiliki stok barang yang selalu sama"
+```
 
 #### Jawaban 2
+
+Ada 4 Source Code. Server Penjual dan Pembeli, Client Penjual dan Pembeli.
+Untuk pembuatan thread, socket, dan shared memory menggunakan yang sama dengan modul dengan beberapa modifikasi.
 #### Source Code
+server_penjual.c
 ```c
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <pthread.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#define PORT 8080
+
+int* value;
+
+void* check(){
+    while(1){
+        printf("Stok saat ini %d\n", *value);
+        sleep(5);
+    }
+}
+
+int main(int argc, char const *argv[]) {
+    int server_fd, new_socket, valread;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char buffer[1024] = {0};
+    char *hello = "Hello from server";
+
+    key_t key = 1234;
+
+    int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+    value = shmat(shmid, NULL, 0);
+    *value = 7;
+      
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+      
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
+      
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    pthread_t t_id;
+    pthread_create(&t_id, NULL, check, NULL);
+
+
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+
+    while(1) {
+        valread = read( new_socket , buffer, 1024);
+        if(strcmp(buffer, "tambah") == 0){
+            *value = *value + 1;
+        }
+        if(valread == 0) break;
+        memset(buffer,0,sizeof(buffer));
+    }
+    return 0;
+}
+```
+
+#### Penjelasan
+```c
+pthread_t t_id;
+pthread_create(&t_id, NULL, check, NULL);
+```
+Membuat thread untuk menampilkan ketersediaan stok setiap 5 detik.
+```c
+void* check(){
+    while(1){
+        printf("Stok saat ini %d\n", *value);
+        sleep(5);
+    }
+}
+```
+Fungsi yang akan dijalankan oleh thread untuk menampilkan stok setiap 5 detik.
+```c
+while(1) {
+    valread = read( new_socket , buffer, 1024);
+    if(strcmp(buffer, "tambah") == 0){
+        *value = *value + 1;
+    }
+    if(valread == 0) break;
+    memset(buffer,0,sizeof(buffer));
+}
+```
+Membaca input secara terus menerus selama koneksi antara client dan server tidak terputus.  
+Input disimpan di variable buffer, kemudian melakukan pengecekan apakah buffer sama dengan "tambah", jika "tambah" maka stok akan bertambah 1.
+#### Source Code
+client_penjual.c
+```c
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#define PORT 8080
+  
+int main(int argc, char const *argv[]) {
+    struct sockaddr_in address;
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char query[1000]={0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+  
+    memset(&serv_addr, '0', sizeof(serv_addr));
+  
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+      
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+  
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+    
+    while(1){
+        scanf("%s",query);
+        send(sock, query, strlen(query), 0);
+        memset(query,0,sizeof(query));
+    }
+    return 0;
+}
+```
+
+#### Penjelasan
+```c
+#define PORT 8080
+```
+Mendefinisikan port yang sama dengan server.
+```c
+while(1){
+    scanf("%s",query);
+    send(sock, query, strlen(query), 0);
+    memset(query,0,sizeof(query));
+}
+```
+Selama koneksi tidak terputus, maka client akan melakukan scanf untuk input lalu mengirimnya ke server.
+
+#### Source Code
+server_pembeli.c
+```c
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <pthread.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#define PORT 9090
+
+int* value;
+
+int main(int argc, char const *argv[]) {
+    int server_fd, new_socket, valread;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char buffer[1024] = {0};
+    char *hello = "Hello from server";
+    char success[] = "transaksi berhasil\n";
+    char fail[] = "transaksi gagal\n";
+    char wrong[] = "query salah\n";
+
+    key_t key = 1234;
+
+    int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+    value = shmat(shmid, NULL, 0);
+    *value = 7;
+      
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+      
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons( PORT );
+      
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+
+    while(1) {
+        valread = read( new_socket , buffer, 1024);
+        if(strcmp(buffer, "beli") == 0){
+            if(*value > 0){
+                send(new_socket, success, strlen(success), 0);
+                *value = *value - 1;
+            }else{
+                send(new_socket, fail, strlen(fail), 0);
+            }  
+        }else send(new_socket, wrong, strlen(wrong), 0);
+        if(valread == 0) break;
+        memset(buffer,0,sizeof(buffer));
+    }
+    return 0;
+}
 
 ```
 
 #### Penjelasan
+```c
+while(1) {
+    valread = read( new_socket , buffer, 1024);
+    if(strcmp(buffer, "beli") == 0){
+        if(*value > 0){
+            send(new_socket, success, strlen(success), 0);
+            *value = *value - 1;
+        }else{
+            send(new_socket, fail, strlen(fail), 0);
+        }  
+    }else send(new_socket, wrong, strlen(wrong), 0);
+    if(valread == 0) break;
+    memset(buffer,0,sizeof(buffer));
+}
+```
+Membaca input secara terus menerus selama koneksi antara client dan server tidak terputus.  
+Input disimpan di variable buffer, kemudian melakukan pengecekan apakah buffer sama dengan "beli", jika "beli" maka stok akan berkurang satu 1.  
+Jika stok lebih dari 0 maka akan mengirim "transaksi berhasil" ke client.  
+Jika stok kurang dari 1 maka akan mengirim "transaksi gagal" ke client.  
+Jika query yang dimasukkan salah maka akan mengirim "query salah" ke client.
+```c
+char success[] = "transaksi berhasil\n";
+char fail[] = "transaksi gagal\n";
+char wrong[] = "query salah\n";
+```
+Variable yang menyimpan pesan yang dikirim ke client.
+#### Source Code
+client_pembeli.c
+```c
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#define PORT 9090
+  
+int main(int argc, char const *argv[]) {
+    struct sockaddr_in address;
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *hello = "Hello from client";
+    char buffer[1024] = {0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+  
+    memset(&serv_addr, '0', sizeof(serv_addr));
+  
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+      
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+  
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
 
+    char query[1000]={0};
+    
+    while(1){
+        scanf("%s",query);
+        send(sock, query, strlen(query), 0);
+        valread = read( sock , buffer, 1024);
+        printf("%s\n", buffer);
+        memset(query,0,sizeof(query));
+        memset(buffer,0,sizeof(buffer));
+    }
+    return 0;
+}
+
+```
+
+#### Penjelasan
+```c
+#define PORT 9090
+```
+Mendefinisikan port yang sama dengan server.
+```c
+while(1){
+    scanf("%s",query);
+    send(sock, query, strlen(query), 0);
+    valread = read( sock , buffer, 1024);
+    printf("%s\n", buffer);
+    memset(query,0,sizeof(query));
+    memset(buffer,0,sizeof(buffer));
+}
+```
+Selama koneksi tidak terputus, maka client akan melakukan scanf untuk input lalu mengirimnya ke server.  
+Selain itu juga menerima pesan yang dikirin oleh server, apakah transaksi berhasil, sukses, atau query yang salah.
 
 ### **Nomor 3**
 
