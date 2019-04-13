@@ -1426,3 +1426,59 @@ void * hungers (void *argv){
 }
 ```
 pada fungsi ini kita memberikan pengaturan thread pada hungger,kita memberikan pengecualian pada mode bertarung agar thread tidak berjalan. kemudian memberikan sleep sebagai waktu untuk hunger berkurang dalam kasus ini kurang 5 setiap 10 detiknya.
+
+```c
+void * hygiene (void *argv){
+    while(1){
+        if (mode != 1){
+            sleep(10);//seharusnya 30
+            hygienestat-=10;
+
+            if(hygienestat <= 0){
+                printf("monster sangat tidak bersih\n");
+                printf("monstermu mati\n");
+                exit(0);
+            }
+        }
+    }
+
+}
+
+```
+pada fungsi hygiene , kita memberikan pengaturan juga thread tidak berjalan pada mode battle, kemudian hygiene berkurang 10 setiap 30 detiknya dan ketika hygiene sudah 10 maka monster akan perlahan mati.
+
+```c
+void * regenerasi(void *argv){
+    while (1){
+        if (mode!=1){
+
+            if (healthstat < 300){
+                healthstat += 5;
+                sleep(10);
+            }
+
+            if (healthstat > 300){
+                healthstat = 300;
+            }
+        }
+    }
+}
+
+```
+pada fungsi regenerasi kita memmberikan pengaturan thread tidak berjalan pada mode battle kemudian ketika nyawa dibawah maksimal maka akan bertambah 5 setiap 10 detik kemudian membatasi health agar tetap tidak lebih dari 300.
+
+```c
+void * takeabath(void *argv){
+    while(1){
+        if(bathready > 0){
+            while(1){
+                sleep(1);
+                bathready-=1;
+            }
+        }
+
+    }
+
+}
+```
+pada fungsi take a bath disini kita mengatur thread yang berfungsi untuk mengatur bathready. jadi disini detika bath ready berkurang terus menerus agar nantinya bisa menampilkan berapa detik lagikah bath akan ready.
