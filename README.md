@@ -938,3 +938,491 @@ Fungsi untuk melakukan ekstrasi dari file zip, setelah menunggu 15 detik.
 ```
 Setelah itu pada fungsi main, setiap fungsi di atas dijalankan secara berurutan dengan memanfaatkan thread agar 2 proses berjalan bersamaan.  
 Namun sebelum melakukan ekstraksi menunggu terlebih dahulu 15 detik.
+
+### **Nomor 5**
+
+### Soal
+Angga, adik Jiwang akan berulang tahun yang ke sembilan pada tanggal 6 April besok. Karena lupa menabung, Jiwang tidak mempunyai uang sepeserpun untuk membelikan Angga kado. Kamu sebagai sahabat Jiwang ingin membantu Jiwang membahagiakan adiknya sehingga kamu menawarkan bantuan membuatkan permainan komputer sederhana menggunakan program C. Jiwang sangat menyukai idemu tersebut. Berikut permainan yang Jiwang minta. 
+Pemain memelihara seekor monster lucu dalam permainan. Pemain dapat  memberi nama pada monsternya.
+Monster pemain memiliki hunger status yang berawal dengan nilai 200 (maksimalnya) dan nanti akan berkurang 5 tiap 10 detik.Ketika hunger status mencapai angka nol, pemain akan kalah. Hunger status dapat bertambah 15 apabila pemain memberi makan kepada monster, tetapi banyak makanan terbatas dan harus beli di Market.
+Monster pemain memiliki hygiene status yang berawal dari 100 dan nanti berkurang 10 tiap 30 detik. Ketika hygiene status mencapai angka nol, pemain akan kalah. Hygiene status' dapat bertambah 30 hanya dengan memandikan monster. Pemain dapat memandikannya setiap 20 detik(cooldownnya 20 detik).
+Monster pemain memiliki health status yang berawal dengan nilai 300. Variabel ini bertambah (regenerasi)daa 5 setiap 10 detik ketika monster dalam keadaan standby.
+Monster pemain dapat memasuki keadaan battle. Dalam keadaan ini, food status(fitur b), hygiene status'(fitur c), dan ‘regenerasi’(fitur d) tidak akan berjalan. Health status dari monster dimulai dari darah saat monster pemain memasuki battle. Monster pemain akan bertarung dengan monster NPC yang memiliki darah 100. Baik monster pemain maupun NPC memiliki serangan sebesar 20. Monster pemain dengan monster musuh akan menyerang secara bergantian. 
+Fitur shop, pemain dapat membeli makanan sepuas-puasnya selama stok di toko masih tersedia.
+Pembeli (terintegrasi dengan game)
+Dapat mengecek stok makanan yang ada di toko.
+Jika stok ada, pembeli dapat membeli makanan.
+Penjual (terpisah)
+Bisa mengecek stok makanan yang ada di toko
+Penjual dapat menambah stok makanan.
+    Spesifikasi program:
+Program mampu mendeteksi input berupa key press. (Program bisa berjalan tanpa perlu menekan tombol enter)
+Program terdiri dari 3 scene yaitu standby, battle, dan shop.
+Pada saat berada di standby scene, program selalu menampilkan health status, hunger status, hygiene status, stok makanan tersisa, dan juga status kamar mandi (“Bath is ready” jika bisa digunakan, “Bath will be ready in [bath cooldown]s” jika sedang cooldown). Selain itu program selalu menampilkan 5 menu, yaitu memberi makan, mandi, battle, shop, dan exit. Contoh :
+
+Standby Mode
+Health : [health status]
+Hunger : [hunger status]
+Hygiene : [hygiene status]
+Food left : [your food stock]
+Bath will be ready in [cooldown]s
+Choices
+Eat
+Bath
+Battle
+Shop
+Exit
+
+Pada saat berada di battle scene, program selalu menampilkan health status milik pemain dan monster NPC. Selain itu, program selalu menampilkan 2 menu yaitu serang atau lari. Contoh :
+
+Battle Mode
+Monster’s Health : [health status]
+Enemy’s Health : [enemy health status]
+Choices
+Attack
+Run
+
+Pada saat berada di shop scene versi pembeli, program selalu menampilkan food stock toko dan milik pemain. Selain itu, program selalu menampilkan 2 menu yaitu beli dan kembali ke standby scene. Contoh :
+
+        Shop Mode
+        Shop food stock : [shop food stock]
+        Your food stock : [your food stock]
+        Choices
+Buy
+Back
+
+Pada program penjual, program selalu menampilkan food stock toko. Selain itu, program juga menampilkan 2 menu yaitu restock dan exit. Contoh :
+
+Shop
+Food stock : [shop food stock]
+Choices
+Restock
+Exit
+
+Pastikan terminal hanya mendisplay status detik ini sesuai scene terkait (hint: menggunakan system(“clear”))
+
+### Pemahaman Soal 5
+Didalam soal ini kita akan membuat sebuah program game yang mirip dengan tamagochi , mempunyai fitur makan , mandi , bertarung belanja
+yang memiliki ketentuanya sendiri-sendiri. pada fitur mandi hanya bsa dilakukan 20 detik sekali. sehingga akan muncul apakah bath ready ato tidak. kemudian hunger dan hygiene berkurang tiap beberapa detik dan disini kita menggunakan thread untuk mengontrolnya. kemudian sisanya mengikuti ketentuan soal yang sudah sangat jelas. Namun ada pengecualian yakni input harus dimasukkan tanpa menunggu enter , sehingga langsung membaca keypress. kemudian terdapat dua kodingan yakni kodingan dari pemain dan kodingan untuk penjual
+
+### Source Code pemain
+```C
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include <termios.h>
+#include <pthread.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+char monsname[32];
+int hungerstat  = 200;
+int hygienestat = 100;
+int healthstat  = 300;
+int npchealth   = 100;
+int food        = 0;
+int *foodmarket ; 
+int bathready   = 0;
+int mode=0;
+
+char getch() {
+    char buf = 0;
+    struct termios old = {0};
+    if (tcgetattr(0, &old) < 0)
+        perror("tcsetattr()");
+    old.c_lflag &= ~ICANON;
+    old.c_lflag &= ~ECHO;
+    old.c_cc[VMIN] = 1;
+    old.c_cc[VTIME] = 0;
+    if (tcsetattr(0, TCSANOW, &old) < 0)
+        perror("tcsetattr ICANON");
+    if (read(0, &buf, 1) < 0)
+        perror ("read()");
+    old.c_lflag |= ICANON;
+    old.c_lflag |= ECHO;
+    if (tcsetattr(0, TCSADRAIN, &old) < 0)
+        perror ("tcsetattr ~ICANON");
+    return (buf);
+}
+
+void * hungers (void *argv){
+    while (1){
+        if(mode != 1){
+            if (hungerstat >=200){
+                hungerstat = 200;
+            }
+            else if (hungerstat <= 0){
+                printf("monster kelaparan\n");
+                printf("monser mati , game over\n");
+                exit(0);
+            }
+            sleep(10);
+            hungerstat -= 5;
+        }
+        
+    }
+
+}
+
+void * hygiene (void *argv){
+    while(1){
+        if (mode != 1){
+            sleep(10);//seharusnya 30
+            hygienestat-=10;
+
+            if(hygienestat <= 0){
+                printf("monster sangat tidak bersih\n");
+                printf("monstermu mati\n");
+                exit(0);
+            }
+        }
+    }
+
+}
+
+void * regenerasi(void *argv){
+    while (1){
+        if (mode!=1){
+
+            if (healthstat < 300){
+                healthstat += 5;
+                sleep(10);
+            }
+
+            if (healthstat > 300){
+                healthstat = 300;
+            }
+        }
+    }
+}
+
+void * takeabath(void *argv){
+    while(1){
+        if(bathready > 0){
+            while(1){
+                sleep(1);
+                bathready-=1;
+            }
+        }
+
+    }
+
+}
+
+void * modebattle(void *argv){
+    char input;
+    
+    while (1){
+        
+        if (mode == 1 ){
+            printf("battle mode\n");
+            input = getch();
+            printf("%c",input);
+        
+            if (input == '1'){
+                printf("attack monster npc\n");
+                printf("deal 20 demange to npc\n");
+                
+                npchealth-=20;
+
+                printf("npc attack you\n");    
+                printf("npc deal 20 demage to you\n");
+                
+                healthstat-=20;
+
+
+                if(npchealth <= 0){
+                    printf("you win \n");
+                    mode = 0;
+                }
+                else if (healthstat <= 0){
+                    printf("you lose and die\n");
+                    exit(0);
+                }
+
+                sleep(1);    
+            }
+            else if (input == '2'){
+                printf("kabur\n");
+                npchealth = 100;
+                mode = 0;
+            }
+        }
+    }
+}
+
+void * modeshoping(void *argv){
+    char input;
+    
+    while (1){
+        if (mode == 2){
+            input = getch();
+
+            if (input == '1'){
+            
+                if (*foodmarket>0){
+                    *foodmarket-=1;
+                    food+=1;
+                }
+                else printf("stock toko habis\n");
+
+            }
+            else if (input == '2'){
+                mode = 0;
+            }
+        
+        }
+
+        
+    }
+
+}
+
+void * modeawal(void *argv){
+    char input;
+    while (1){
+        if (mode == 0){
+            input = getch();
+
+            if (input == '1'){
+                if (food!=0){
+                    food-=1;
+                    hungerstat+=15;
+                    printf("monster telah makan\n");
+                }
+                else printf ("makanan habis\n");
+
+            }
+            else if (input == '2'){
+                
+                if (bathready <= 0){
+                    printf ("mandi ...\n");
+                    hygienestat+=30;
+                    bathready=20;
+                }
+                else printf("bath belum ready\n");
+                
+            }
+            else if (input == '3'){
+                printf("masuk mode Battle\n");
+                mode = 1;
+            }
+            else if (input == '4'){
+                printf("masuk mode Pasar\n");
+                mode = 2;
+            }
+            else if (input == '5'){
+                printf("keluar dari game ..\n");
+                sleep(1);
+                exit(0);
+            }
+        }
+    }
+}
+
+
+int main (){
+    printf("input monster name : ");
+    scanf("%s",monsname);
+    pthread_t thread1,thread2,thread3,thread4,thread5,thread6,thread7;
+    key_t pids = 2799;
+    int shmid  = shmget(pids, sizeof(int), IPC_CREAT | 0666);
+    foodmarket = shmat(shmid, NULL, 0);
+
+    pthread_create(&thread1, NULL, hungers, NULL);
+    pthread_create(&thread2, NULL, hygiene, NULL);
+    pthread_create(&thread3, NULL, regenerasi, NULL);
+    pthread_create(&thread4, NULL, takeabath, NULL);
+    pthread_create(&thread5, NULL, modebattle, NULL);
+    pthread_create(&thread6, NULL, modeshoping, NULL);
+    pthread_create(&thread7, NULL, modeawal, NULL);
+
+    
+
+
+    while(1){
+        if ( mode == 0){
+            printf("Mode stand Bye\n");
+            printf("Health Status\t : %d\n",healthstat);
+            printf("Hygiene Status\t : %d\n",hygienestat);
+            printf("Hunger Status\t : %d\n",hungerstat);
+            printf("Food left\t : %d\n",food);
+
+            if(bathready<=0){
+                printf("Bath is ready\n");
+            }
+            else if(bathready > 0){
+                printf("Bath will be ready in \t : %d second\n",bathready);
+            }
+
+            printf(" pilihan : \n");
+            printf(" 1  = Makana   \n");
+            printf(" 2  = Mandi    \n");
+            printf(" 3  = Battle   \n");
+            printf(" 4  = Shopping \n");
+            printf(" 5  = ExitGame \n");
+
+        }
+        else if ( mode == 1 ){
+            printf("Mode Battle\n");
+            printf("Health Status\t : %d\n",healthstat);
+            printf("NPC Health Status\t : %d\n",npchealth);
+
+            printf("pilihan :\n");
+            printf(" 1  = Attack\n");
+            printf(" 2  = Run\n");
+
+
+        }
+        else if ( mode == 2 ){
+            printf("Mode Shopping\n");
+            printf("Shop food stock \t : %d\n",*foodmarket);
+            printf("Your food stock\t : %d\n",food);
+
+            printf("pilihan :\n");
+            printf(" 1  = Buy\n");
+            printf(" 2  = Back\n");            
+        }
+        sleep(1);
+        system("clear");
+    }
+
+    pthread_join(thread1,NULL);
+    pthread_join(thread2,NULL);
+    pthread_join(thread3,NULL);
+    pthread_join(thread4,NULL);
+    pthread_join(thread5,NULL);
+    pthread_join(thread6,NULL);
+    pthread_join(thread7,NULL);
+}
+```
+
+### Source Code penjual
+```C
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include <termios.h>
+#include <pthread.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+int *foodmarket;
+
+char getch() {
+    char buf = 0;
+    struct termios old = {0};
+    if (tcgetattr(0, &old) < 0)
+        perror("tcsetattr()");
+    old.c_lflag &= ~ICANON;
+    old.c_lflag &= ~ECHO;
+    old.c_cc[VMIN] = 1;
+    old.c_cc[VTIME] = 0;
+    if (tcsetattr(0, TCSANOW, &old) < 0)
+        perror("tcsetattr ICANON");
+    if (read(0, &buf, 1) < 0)
+        perror ("read()");
+    old.c_lflag |= ICANON;
+    old.c_lflag |= ECHO;
+    if (tcsetattr(0, TCSADRAIN, &old) < 0)
+        perror ("tcsetattr ~ICANON");
+    return (buf);
+}
+
+void * shop (void * argv){
+    char input;
+
+    while (1){
+        input = getch();
+        if(input == '1'){
+            printf("menambah stock 1 makanan\n");
+            *foodmarket +=1;
+        }
+        else if (input == '2') exit(0);    
+    }
+}
+
+
+int main (){
+    //
+    key_t pids = 2799;
+    
+    int shmid  = shmget(pids, sizeof(int), IPC_CREAT | 0666);
+    foodmarket = shmat(shmid, NULL, 0);
+    
+    pthread_t thread1;
+    pthread_create(&thread1, NULL, shop, NULL);
+
+    while (1){
+        printf("Shop\n");
+        printf("Food Stock\t : %d\n",*foodmarket);
+
+        printf("Pilihan\n");
+        printf("1. Restock\n");
+        printf("2. Exit\n");
+
+        sleep(1);
+        system("clear");
+    }
+}
+```
+
+### Penjelasan
+```c
+char monsname[32];
+int hungerstat  = 200;
+int hygienestat = 100;
+int healthstat  = 300;
+int npchealth   = 100;
+int food        = 0;
+int *foodmarket ; 
+int bathready   = 0;
+int mode=0;
+```
+pertama-tama kita membuat variable global yakni variable yang akan digunakan untuk thread kita nantinya.
+
+```c
+char getch() {
+    char buf = 0;
+    struct termios old = {0};
+    if (tcgetattr(0, &old) < 0)
+        perror("tcsetattr()");
+    old.c_lflag &= ~ICANON;
+    old.c_lflag &= ~ECHO;
+    old.c_cc[VMIN] = 1;
+    old.c_cc[VTIME] = 0;
+    if (tcsetattr(0, TCSANOW, &old) < 0)
+        perror("tcsetattr ICANON");
+    if (read(0, &buf, 1) < 0)
+        perror ("read()");
+    old.c_lflag |= ICANON;
+    old.c_lflag |= ECHO;
+    if (tcsetattr(0, TCSADRAIN, &old) < 0)
+        perror ("tcsetattr ~ICANON");
+    return (buf);
+}
+
+```
+pada fungsi pertama kita membuat fungsi getch, dimana disini fungsinya berguna untuk mengambil keypress yang kita berikan pada saat codingan berjalan
+
+```c
+void * hungers (void *argv){
+    while (1){
+        if(mode != 1){
+            if (hungerstat >=200){
+                hungerstat = 200;
+            }
+            else if (hungerstat <= 0){
+                printf("monster kelaparan\n");
+                printf("monser mati , game over\n");
+                exit(0);
+            }
+            sleep(10);
+            hungerstat -= 5;
+        }   
+    }
+}
+```
+pada fungsi ini kita memberikan pengaturan thread pada hungger,kita memberikan pengecualian pada mode bertarung agar thread tidak berjalan. kemudian memberikan sleep sebagai waktu untuk hunger berkurang dalam kasus ini kurang 5 setiap 10 detiknya.
